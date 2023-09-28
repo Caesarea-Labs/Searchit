@@ -1,18 +1,29 @@
 package com.caesarealabs.searchit.impl
 
+import com.caesarealabs.searchit.DataLens
 import com.caesarealabs.searchit.SpecialFilter
 
 internal typealias SpecialFilters = List<SpecialFilter<*>>
 
 internal object QueryValidator {
+    context(DataLens<*, *>)
     // Returns null if it is valid
     internal fun validateQuery(query: List<QueryToken>): String? {
         validateParentheses(query)?.let { return it }
         validateOperators(query)?.let { return it }
         validateTime(query, QueryParser.StartDateToken)?.let { return it }
         validateTime(query, QueryParser.EndDateToken)?.let { return it }
-
+        validateKeys(query)?.let { return it }
         return null
+    }
+
+    // Check that the specified keys are in the "keys" set
+    context(DataLens<*, *>)
+    private fun validateKeys(query: List<QueryToken>): String? {
+        // Null keys - everything is fine
+        val keysValue = keys ?: return null
+        val violator = query.find { it is QueryToken.KeyValue && it.key !in keysValue } ?: return null
+        return "No such key '$violator'. Available keys: $keys"
     }
 
     private fun validateOperators(query: List<QueryToken>): String? {

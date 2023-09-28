@@ -1,5 +1,6 @@
 package com.caesarealabs.searchit.impl
 
+import com.caesarealabs.searchit.DataLens
 import com.caesarealabs.searchit.Filter
 import com.caesarealabs.searchit.TimeRange
 import com.github.michaelbull.result.Err
@@ -12,7 +13,7 @@ import java.time.ZonedDateTime
 
 internal typealias QueryParseResult = Result<SearchitQuery, String>
 
-internal class QueryParser(private val specialFilters: SpecialFilters) {
+internal class QueryParser(private val lens: DataLens<*,*>, private val specialFilters: SpecialFilters) {
     companion object {
         const val StartDateToken: String = "from"
         const val EndDateToken: String = "to"
@@ -24,7 +25,9 @@ internal class QueryParser(private val specialFilters: SpecialFilters) {
         try {
             val tokenized = QueryTokenizer.tokenize(query).or { return it }
             // If validateQuery returned non-null it means we have an error
-            QueryValidator.validateQuery(tokenized)?.let { return Err(it) }
+            with(lens) {
+                QueryValidator.validateQuery(tokenized)?.let { return Err(it) }
+            }
 
             val (timeRange, otherTokens) = tokenized.takeTimeRangeFilter().or { return it }
 

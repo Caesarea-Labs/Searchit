@@ -2,7 +2,7 @@ package com.caesarealabs.searchit.impl
 
 import com.caesarealabs.searchit.*
 
-internal fun <T> SearchitContext<T>.search(query: SearchitQuery): List<T> {
+internal suspend fun <T> SearchitContext<T>.search(query: SearchitQuery): List<T> {
     val inMemoryResults = database.query(query.timeRange)
     return with(lens) { inMemoryResults.searchInMemory(query.filters) }
 }

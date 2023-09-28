@@ -19,8 +19,8 @@ public object SearchIt
  * Searches through a database with the query [query], paginating with page [page].
  * First construct a [SearchitContext] instance, then call this method.
  */
-public fun <T> SearchitContext<T>.search(query: String, page: Int): SearchitResult<T> {
-    val parsedQuery = QueryParser(specialFilters).parseQuery(query).getOrElse { return SearchitResult.SyntaxError(it) }
+public suspend fun <T> SearchitContext<T>.search(query: String, page: Int): SearchitResult<T> {
+    val parsedQuery = QueryParser(lens, specialFilters).parseQuery(query).getOrElse { return SearchitResult.SyntaxError(it) }
     val fullSearchResults = search(parsedQuery).sortedByDescending {
         // This cast is fine, it's fair to except all sort keys to have the same type considering that's defined in the DataLens interface.
         @Suppress("UNCHECKED_CAST")
@@ -44,7 +44,7 @@ public interface Database<T> {
      * Box-standard filtering of a database by a time range.
      * In this case 'query' is the classic database terminology for it, although this library would normally treat this action as a 'search'.
      */
-    public fun query(timeRange: TimeRange): List<T>
+    public suspend fun query(timeRange: TimeRange): List<T>
 }
 public data class TimeRange(val start: Instant, val end: Instant)
 
@@ -58,6 +58,13 @@ public interface DataLens<T, SortKey> {
      * For example the item {x: 2, y:3} could be considered to have the key `x` with the value `2`, but it doesn't have the key `x` with the value `3`.
      */
     public fun hasKeyValue(item: T, key: String, value: String) : Boolean
+
+    /**
+     * Allows specifying a set of keys so that only they are valid as a key in a `key:value` expression.
+     * The keys are not case-sensitive.
+     * Return null to allow all keys.
+     */
+    public val keys: Set<String>? get() = null
 
     /**
      * The results will be sorted from high to low according to the [sortKey] of each [item].

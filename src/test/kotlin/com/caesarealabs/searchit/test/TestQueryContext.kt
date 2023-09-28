@@ -15,7 +15,7 @@ import java.time.Instant
 /**
  * Query parser with Loggy's special filters for testing
  */
-internal val TestQueryParser = QueryParser(listOf(ExactSeverityFilter, AtLeastSeverityFilter))
+internal val TestQueryParser = QueryParser(TestDataLens, listOf(ExactSeverityFilter, AtLeastSeverityFilter))
 
 
 
