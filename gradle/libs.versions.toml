@@ -1,0 +1,16 @@
+
+[plugins]
+kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+
+[versions]
+
+kotlin = "1.9.0"
+strikt = "0.34.1"
+result = "1.1.18"
+serialization = "1.6.0"
+
+[libraries]
+strikt = {group = "io.strikt", name = "strikt-core", version.ref= "strikt"}
+result = {group = "com.michael-bull.kotlin-result",name = "kotlin-result", version.ref = "result"}
+serialization = {group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-core", version.ref = "serialization"}
