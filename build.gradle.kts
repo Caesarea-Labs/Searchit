@@ -16,7 +16,7 @@ plugins {
 
 val projectGroup = "com.caesarealabs"
 val projectId = "searchit"
-val projectVersion = "0.2"
+val projectVersion = "0.3"
 val githubUrl = "https://github.com/Caesarea-Labs/Searchit"
 val projectLicense = "The MIT License"
 
