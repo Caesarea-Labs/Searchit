@@ -22,8 +22,9 @@ internal object QueryValidator {
     private fun validateKeys(query: List<QueryToken>): String? {
         // Null keys - everything is fine
         val keysValue = keys ?: return null
-        val violator = query.find { it is QueryToken.KeyValue && it.key !in keysValue } ?: return null
-        return "No such key '$violator'. Available keys: $keys"
+        val allowedKeys = (keysValue + QueryParser.allDateTokens).map { it.lowercase() }.toHashSet()
+        val violator = query.find { it is QueryToken.KeyValue && it.key.lowercase() !in allowedKeys } as QueryToken.KeyValue? ?: return null
+        return "No such key '${violator.value}'. Available keys: $keys"
     }
 
     private fun validateOperators(query: List<QueryToken>): String? {

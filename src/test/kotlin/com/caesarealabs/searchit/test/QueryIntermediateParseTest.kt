@@ -172,10 +172,10 @@ class QueryIntermediateParseTest {
         parseQuery("from:lastMonth")
             .expectStartsSameDay(today.minusMonths(1))
 
-        parseQuery("from:5")
+        parseQuery("from:5 to:6")
             .expectStartsSameDay(today.withDayOfMonth(5))
 
-        parseQuery("from:5/6")
+        parseQuery("from:5/6 to: 5/8")
             .expectStartsSameDay(today.withDayOfMonth(5).withMonth(6))
 
         parseQuery("from:5/6/1990")

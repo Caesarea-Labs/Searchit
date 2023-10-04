@@ -3,9 +3,9 @@ package com.caesarealabs.searchit
 import com.caesarealabs.searchit.impl.QueryParser
 import com.caesarealabs.searchit.impl.search
 import com.github.michaelbull.result.getOrElse
+import kotlinx.serialization.Serializable
 import java.time.Instant
 import kotlin.math.ceil
-import kotlinx.serialization.Serializable
 
 /**
  * A note about definitions.
@@ -16,23 +16,32 @@ import kotlinx.serialization.Serializable
 public object SearchIt
 
 /**
- * Searches through a database with the query [query], paginating with page [page].
- * First construct a [SearchitContext] instance, then call this method.
+ * @see Database
+ * @see DataLens
+ * @see SpecialFilter
  */
-public suspend fun <T> SearchitContext<T>.search(query: String, page: Int): SearchitResult<T> {
-    val parsedQuery = QueryParser(lens, specialFilters).parseQuery(query).getOrElse { return SearchitResult.SyntaxError(it) }
-    val fullSearchResults = search(parsedQuery).sortedByDescending {
-        // This cast is fine, it's fair to except all sort keys to have the same type considering that's defined in the DataLens interface.
-        @Suppress("UNCHECKED_CAST")
-        lens.sortKey(it) as Comparable<Comparable<Nothing>>
-    }
-    val allPageCount = ceil(fullSearchResults.size.toDouble() / PageSize).toInt()
-    val actualPage = page.coerceAtMost((allPageCount - 1).coerceAtLeast(0))
-    // Return only PageSize items, and skip pages before the requested page
-    val pageSearchResults = fullSearchResults.drop(actualPage * PageSize).take(PageSize)
+public class SearchitContext<T>(internal val database: Database<T>, internal val lens: DataLens<T, *>,
+                                private val specialFilters: List<SpecialFilter<T>>) {
+    /**
+     * Searches through a database with the query [query], paginating with page [page].
+     * First construct a [SearchitContext] instance, then call this method.
+     */
+    public suspend fun search(query: String, page: Int, maxPageItems: Int = 18): SearchitResult<T> {
+        val parsedQuery = QueryParser(lens, specialFilters).parseQuery(query).getOrElse { return SearchitResult.SyntaxError(it) }
+        val fullSearchResults = search(parsedQuery).sortedByDescending {
+            // This cast is fine, it's fair to except all sort keys to have the same type considering that's defined in the DataLens interface.
+            @Suppress("UNCHECKED_CAST")
+            lens.sortKey(it) as Comparable<Comparable<Nothing>>
+        }
+        val allPageCount = ceil(fullSearchResults.size.toDouble() / maxPageItems).toInt()
+        val actualPage = page.coerceAtMost((allPageCount - 1).coerceAtLeast(0))
+        // Return only PageSize items, and skip pages before the requested page
+        val pageSearchResults = fullSearchResults.drop(actualPage * maxPageItems).take(maxPageItems)
 
-    return SearchitResult.Success(pageCount = allPageCount, items = pageSearchResults)
+        return SearchitResult.Success(pageCount = allPageCount, items = pageSearchResults)
+    }
 }
+
 
 /**
  * An adapter for a database, for example DynamoDB or ObjectBox
@@ -46,7 +55,10 @@ public interface Database<T> {
      */
     public suspend fun query(timeRange: TimeRange): List<T>
 }
-public data class TimeRange(val start: Instant, val end: Instant)
+
+public data class TimeRange(override val start: Instant, val end: Instant) : ClosedRange<Instant> {
+    override val endInclusive: Instant = end
+}
 
 /**
  * When filtering items, they may be filtered according to certain characteristics.
@@ -57,7 +69,7 @@ public interface DataLens<T, SortKey> {
      * Returns true if item [item] as the key [key] equal to the value [value]
      * For example the item {x: 2, y:3} could be considered to have the key `x` with the value `2`, but it doesn't have the key `x` with the value `3`.
      */
-    public fun hasKeyValue(item: T, key: String, value: String) : Boolean
+    public fun hasKeyValue(item: T, key: String, value: String): Boolean
 
     /**
      * Allows specifying a set of keys so that only they are valid as a key in a `key:value` expression.
@@ -70,12 +82,12 @@ public interface DataLens<T, SortKey> {
      * The results will be sorted from high to low according to the [sortKey] of each [item].
      * A good sort key is the date of the item.
      */
-    public fun sortKey(item: T) : Comparable<SortKey>
+    public fun sortKey(item: T): Comparable<SortKey>
 
     /**
      * Needed for text-based search
      */
-    public fun containsText(item:T, text: String): Boolean
+    public fun containsText(item: T, text: String): Boolean
 }
 
 /**
@@ -88,23 +100,11 @@ public data class SpecialFilter<T>(val keyword: String, val filterFactory: (valu
 public typealias Filter<T> = (item: T) -> Boolean
 
 
-/**
- * @see Database
- * @see DataLens
- * @see SpecialFilter
- */
-public data class SearchitContext<T>(val database: Database<T>, val lens: DataLens<T,*>, val specialFilters: List<SpecialFilter<T>>)
-
-
-private const val PageSize = 18
-
-
-
-
 @Serializable
 public sealed interface SearchitResult<out T> {
     @Serializable
-    public data class Success<T>(val pageCount: Int, val items: List<T>): SearchitResult<T>
+    public data class Success<T>(val pageCount: Int, val items: List<T>) : SearchitResult<T>
+
     @Serializable
-    public data class SyntaxError(val error: String): SearchitResult<Nothing>
+    public data class SyntaxError(val error: String) : SearchitResult<Nothing>
 }

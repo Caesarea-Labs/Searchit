@@ -17,9 +17,9 @@ internal class QueryParser(private val lens: DataLens<*,*>, private val specialF
     companion object {
         const val StartDateToken: String = "from"
         const val EndDateToken: String = "to"
+        val allDateTokens = listOf(StartDateToken, EndDateToken)
     }
 
-    private val allDateTokens = listOf(StartDateToken, EndDateToken)
 
     fun parseQuery(query: String): QueryParseResult {
         try {
@@ -207,7 +207,7 @@ internal class QueryParser(private val lens: DataLens<*,*>, private val specialF
         }
 
         if (startDate.isAfter(endDate)) {
-            return Err("Specified start date ${startDateToken?.value} can't come after specified end date ${endDateToken?.value}")
+            return Err("Specified start date ${startDateToken?.value} can't come after specified end date $endDate")
         }
 
         return Ok(TimeRange(startDate.toInstant(), endDate.toInstant()) to timeIrrelevant)
