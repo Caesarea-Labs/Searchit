@@ -48,12 +48,12 @@ class SearchTest {
         buildLog("8") {
             logInfo { "inf" }
             logError(NullPointerException("")) { "amar" }
-        }
+        },
 
     )
 
     @Test
-    fun testSearch() {
+    fun testSearch()  = with(testLogs){
         val time = measureTimeMillis {
             "keepo123".assertResultsAre(0)
             "hello".assertResultsAre(0, 1)
@@ -77,12 +77,22 @@ class SearchTest {
         println("Did queries in $time ms")
     }
 
+    private val textSearchLogs = listOf(
+        buildLog("0") {
+            logInfo { "TitleCase" }
+        }
+    )
+    @Test fun testTextSearch()  = with(textSearchLogs){
+        "TITLECASE".assertResultsAre(0)
+    }
+
+    context(List<TestItem>)
     private fun String.assertResultsAre(vararg results: Int) {
         val parsed = TestQueryParser.parseQuery(this)
         expectThat(parsed).isA<Ok<SearchitQuery>>()
         parsed as Ok<SearchitQuery>
         with(TestDataLens) {
-            expectThat(testLogs.searchInMemory(parsed.value.filters))
+            expectThat(searchInMemory(parsed.value.filters))
                 .map { it.name.toInt() }
                 .isEqualTo(results.toList())
         }
