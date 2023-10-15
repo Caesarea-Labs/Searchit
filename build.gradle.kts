@@ -16,7 +16,7 @@ plugins {
 
 val projectGroup = "com.caesarealabs"
 val projectId = "searchit"
-val projectVersion = "0.6"
+val projectVersion = "0.6.1"
 val githubUrl = "https://github.com/Caesarea-Labs/Searchit"
 val projectLicense = "The MIT License"
 
@@ -75,71 +75,68 @@ fun getSecretFileContents(path: String): String {
     return String(getSecretsFile(path).readBytes())
 }
 
-if (project.file("publisher.txt").exists()) {
-    afterEvaluate {
-        tasks.create("uploadLibrary") {
-            group = "upload"
-            dependsOn(tasks["publishToSonatype"], tasks["closeAndReleaseSonatypeStagingRepository"])
-        }
+afterEvaluate {
+    tasks.create("uploadLibrary") {
+        group = "upload"
+        dependsOn(tasks["publishToSonatype"], tasks["closeAndReleaseSonatypeStagingRepository"])
     }
+}
 
-    afterEvaluate {
-        publishing {
-            publications {
-                register("release", MavenPublication::class) {
-                    // The coordinates of the library, being set from variables that
-                    // we'll set up later
-                    groupId = projectGroup
-                    artifactId = projectId
-                    version = projectVersion
+afterEvaluate {
+    publishing {
+        publications {
+            register("release", MavenPublication::class) {
+                // The coordinates of the library, being set from variables that
+                // we'll set up later
+                groupId = projectGroup
+                artifactId = projectId
+                version = projectVersion
 
-                    from(components["java"])
+                from(components["java"])
 
-                    // Mostly self-explanatory metadata
-                    pom {
-                        name = projectId
-                        description = "Search Utility"
+                // Mostly self-explanatory metadata
+                pom {
+                    name = projectId
+                    description = "Search Utility"
+                    url = githubUrl
+                    licenses {
+                        license {
+                            name = projectLicense
+                        }
+                    }
+                    developers {
+                        developer {
+                            id = "natan"
+                            name = "Natan Lifshitz"
+                            email = "natan.lifshitz@caesarealabs.com"
+                        }
+                    }
+
+                    scm {
                         url = githubUrl
-                        licenses {
-                            license {
-                                name = projectLicense
-                            }
-                        }
-                        developers {
-                            developer {
-                                id = "natan"
-                                name = "Natan Lifshitz"
-                                email = "natan.lifshitz@caesarealabs.com"
-                            }
-                        }
-
-                        scm {
-                            url = githubUrl
-                        }
                     }
                 }
             }
         }
     }
-    nexusPublishing {
-        this@nexusPublishing.repositories {
-            sonatype {
-                nexusUrl.set(uri("https://s01.oss.sonatype.org/service/local/"))
-                stagingProfileId = getSecretProperty("searchit", "sonatype_staging_profile_id")
-                username = getSecretProperty("sonatype", "ossrh_username")
-                password = getSecretProperty("sonatype", "ossrh_password")
-            }
+}
+// Secrets are set in github actions
+nexusPublishing {
+    this@nexusPublishing.repositories {
+        sonatype {
+            nexusUrl.set(uri("https://s01.oss.sonatype.org/service/local/"))
+            stagingProfileId = System.getenv("SONATYPE_STAGING_PROFILE_ID")
+            username = System.getenv("OSSRH_USERNAME")
+            password = System.getenv("OSSRH_PASSWORD")
         }
     }
-    signing {
-        useInMemoryPgpKeys(
-            getSecretProperty("gpg/keys", "key_id"),
-            getSecretFileContents("gpg/secret_key.txt"),
-            getSecretProperty("gpg/keys", "key_password"),
-        )
-        sign(publishing.publications)
-    }
-} else {
-    println("No publisher.txt file exists, you will not be able to publish artifacts. To enable publishing, create a publisher.txt file in the root directory.")
+}
+signing {
+    useInMemoryPgpKeys(
+        System.getenv("GPG_KEY_ID"),
+        System.getenv("GPG_SECRET_KEY"),
+        System.getenv("GPG_KEY_PASSWORD")
+    )
+    sign(publishing.publications)
 }
 
