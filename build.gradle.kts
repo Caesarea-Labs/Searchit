@@ -31,7 +31,7 @@ dependencies {
     implementation(libs.strikt)
     implementation(libs.result)
     implementation(libs.serialization)
-    implementation("me.xdrop:fuzzywuzzy:1.4.0")
+    implementation(libs.fuzzywuzzy)
     testImplementation(kotlin("test"))
 }
 
