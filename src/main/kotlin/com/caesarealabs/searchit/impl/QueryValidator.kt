@@ -2,6 +2,7 @@ package com.caesarealabs.searchit.impl
 
 import com.caesarealabs.searchit.DataLens
 import com.caesarealabs.searchit.SpecialFilter
+import me.xdrop.fuzzywuzzy.FuzzySearch
 
 internal typealias SpecialFilters = List<SpecialFilter<*>>
 
@@ -24,7 +25,8 @@ internal object QueryValidator {
         val keysValue = keys ?: return null
         val allowedKeys = (keysValue + QueryParser.allDateTokens).map { it.lowercase() }.toHashSet()
         val violator = query.find { it is QueryToken.KeyValue && it.key.lowercase() !in allowedKeys } as QueryToken.KeyValue? ?: return null
-        return "No such key '${violator.value}'. Available keys: $keys"
+        val extraction = FuzzySearch.extractSorted(violator.key, keysValue, 75)
+        return "No such key '${violator.key}'.".appendIf(extraction.isNotEmpty()) { " Did you mean: ${extraction.joinToString { "'${it.string}'" }}?" }
     }
 
     private fun validateOperators(query: List<QueryToken>): String? {

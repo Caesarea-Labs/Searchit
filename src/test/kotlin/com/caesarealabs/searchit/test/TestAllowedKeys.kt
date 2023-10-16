@@ -1,6 +1,7 @@
 package com.caesarealabs.searchit.test
 
 import com.caesarealabs.searchit.DataLens
+import com.caesarealabs.searchit.impl.QueryParseResult
 import com.caesarealabs.searchit.impl.QueryParser
 import com.github.michaelbull.result.Err
 import com.github.michaelbull.result.Ok
@@ -12,15 +13,17 @@ private data class SimpleTestItem(val x: Int, val y: String)
 
 class TestAllowedKeys {
     private val parser = QueryParser(Lens, listOf())
-    private object Lens: DataLens<SimpleTestItem, Int> {
-        override fun hasKeyValue(item: SimpleTestItem, key: String, value: String): Boolean  = when(key) {
+
+    private object Lens : DataLens<SimpleTestItem, Int> {
+        override fun hasKeyValue(item: SimpleTestItem, key: String, value: String): Boolean = when (key) {
             "x" -> value == item.x.toString()
             "y" -> value == item.y
             else -> error("Unexpected key $key")
         }
+
         override fun sortKey(item: SimpleTestItem): Comparable<Int> = item.x
         override fun containsText(item: SimpleTestItem, text: String): Boolean = false
-        override val keys: Set<String> = hashSetOf("x","y")
+        override val keys: Set<String> = hashSetOf("x", "y", "Inconclusive", "Language", "receive")
     }
 
     @Test
@@ -35,9 +38,17 @@ class TestAllowedKeys {
             .isA<Ok<*>>()
         expectThat(parser.parseQuery("fRom:today"))
             .isA<Ok<*>>()
-        expectThat(parser.parseQuery("z:hello"))
-            .isA<Err<*>>()
-        expectThat(parser.parseQuery("wetwet:hello"))
-            .isA<Err<*>>()
+        parser.parseQuery("z:hello").assertError()
+        parser.parseQuery("wetwet:hello").assertError()
+        parser.parseQuery("inconcusive:hello").assertError()
+        parser.parseQuery("languege:hello").assertError()
+        parser.parseQuery("recieve:hello").assertError()
+    }
+
+    private val printErrors = true
+
+    private fun QueryParseResult.assertError() {
+        if (printErrors) println(this)
+        expectThat(this).isA<Err<*>>()
     }
 }

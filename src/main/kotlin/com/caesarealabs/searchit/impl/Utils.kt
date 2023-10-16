@@ -56,3 +56,5 @@ internal fun Instant.toGmtDateTime() = ZonedDateTime.ofInstant(this, GMTZoneId)
 internal fun yesterdayGmt(): ZonedDateTime = Instant.now().toGmtDateTime().minusDays(1)
 internal fun lastWeekGmt(): ZonedDateTime = Instant.now().toGmtDateTime().minusWeeks(1)
 internal fun lastMonthGmt(): ZonedDateTime = Instant.now().toGmtDateTime().minusMonths(1)
+
+internal inline fun String.appendIf(condition: Boolean, toAppend: () -> String) = if(condition) this + toAppend() else this

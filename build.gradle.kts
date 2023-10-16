@@ -16,7 +16,7 @@ plugins {
 
 val projectGroup = "com.caesarealabs"
 val projectId = "searchit"
-val projectVersion = "0.6.1"
+val projectVersion = "0.6.2"
 val githubUrl = "https://github.com/Caesarea-Labs/Searchit"
 val projectLicense = "The MIT License"
 
@@ -31,6 +31,7 @@ dependencies {
     implementation(libs.strikt)
     implementation(libs.result)
     implementation(libs.serialization)
+    implementation("me.xdrop:fuzzywuzzy:1.4.0")
     testImplementation(kotlin("test"))
 }
 
