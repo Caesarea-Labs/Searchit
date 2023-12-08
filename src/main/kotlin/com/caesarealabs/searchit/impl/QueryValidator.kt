@@ -51,11 +51,10 @@ internal object QueryValidator {
 
     private fun validateParentheses(query: List<QueryToken>): String? {
         var openParenthesesCount = 0
-        for ((i, token) in query.withIndex()) {
+        for (token in query) {
             if (token is QueryToken.Parentheses) {
                 when (token) {
                     QueryToken.Parentheses.Opening -> {
-//                        if(i == 0 || query[i - 1] !is QueryToken.Operator) return ""
                         openParenthesesCount++
                     }
 
